@@ -1,0 +1,109 @@
+---
+title: "Práctica 1: "
+subtitle: "Scraper Euroleague BoxScores Season 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+#Cargamos librería rvest
+library("rvest")
+```
+
+- Descripción del proceso seguido para extracción de datos de los boxscores de la temporada 2019 de la Euroliga.
+
+Para extraer los datos de los boxscores de la euroliga en la temporada 2019, hemos seguido los siguientes pasos:
+
+Paso 1: Identificación tablas a extraer
+
+Hemos accedido a la web de los partidos de la Euroliga y hemos inspeccionado el código html e identificado cuales son las tablas que necesitamos extraer. Para extraer los boxscores, necesitaremos extraer los datos de las tablas 3 (equipo local) y 4 (equipo visitante).
+
+Paso 2: Implementación del código
+
+Para implementar el código, obtenemos datos de cada una de las tablas de la página (equipo local y equipo visitante) y las unimos para obtener los datos del partido.Finalmente cada partido se añade al dataframe BoxScores2019, que será el dataset final que obtendremos.
+
+Para obtener los datos de cada partido jugamos con los códigos: el código de partido (252 partidos en la temporada 2019) y el código de temporada (siempre será 2019 para este scraper).
+
+Ejemplo de url: https://www.euroleague.net/main/results/showgame?gamecode=252&seasoncode=E2019
+
+Inicializamos el dataframe con el primer partido de la temporada y, a continuación, realizamos un loop for cargando los datos de todos los partidos de la temporada.
+
+Finalmente, exportamos a archivo csv y visualizamos el dataset resultante.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+#Parte1
+#Cargamos URL del primer partido
+FullURL<-"https://www.euroleague.net/main/results/showgame?gamecode=1&seasoncode=E2019"
+Game1 <- FullURL
+BoxScore <- read_html(Game1)
+
+#Cargamos las tablas que encontramos en la web html
+tables <- BoxScore %>% html_table(fill = TRUE)
+
+#Seleccionamos la tabla 3, correspondiente al equipo local
+first_table <- tables[3]
+#Cargamos la tabla en el datafram df1
+df1 <- data.frame(matrix(unlist(first_table), ncol = max(lengths(first_table)), byrow = FALSE))
+names(df1) <- names(first_table[[which(lengths(first_table)>0)[1]]])
+
+#Seleccionamos la tabla 4, correspondiente al equipo visitante
+second_table <- tables[4]
+#Cargamos la tabla en el datafram df2
+df2 <- data.frame(matrix(unlist(second_table), ncol = max(lengths(second_table)), byrow = FALSE))
+names(df2) <- names(second_table[[which(lengths(second_table)>0)[1]]])
+
+#Concatenamos boxscore local y visitante en BoxScores2019
+BoxScores2019 <- rbind(df1, df2)
+#Asignamos código de temporada y partido en los campos season y game
+BoxScores2019$season='2019'
+BoxScores2019$game='1'
+
+#Parte2
+#Creamos loop for para extraer datos de los 252 partidos de la euroliga en la temporada 2019
+for (GAME in 2:252){
+  #Asignamos season code, en nuestro caso extraemos solo datos de la temporada 2019
+  SeasonCode<- as.character('2019')
+  #Asignamos GameCode, que será el valor que corresponda en el loop for desde 2 a 252
+  GameCode <- as.character(GAME)
+  #Definimos las partes de la URL, que concatenaremos con los código de temporada y de partido
+  URL1 <- as.character('https://www.euroleague.net/main/results/showgame?gamecode=')
+  URL2 <- as.character('&seasoncode=E')
+  FullURL<-paste(URL1, GameCode, URL2, SeasonCode, sep="")
+  #Leemos el html de la URL de cada partido
+  GameURL <- FullURL
+  BoxScore <- read_html(GameURL)
+  
+  #Extraemos las tablas de la página
+  tables <- BoxScore %>% html_table(fill = TRUE)
+
+  #Seleccionamos la tabla 3, correspondiente al equipo local
+  first_table <- tables[3]
+  #Cargamos la tabla en el datafram df1
+  df1 <- data.frame(matrix(unlist(first_table), ncol = max(lengths(first_table)), byrow = FALSE))
+  names(df1) <- names(first_table[[which(lengths(first_table)>0)[1]]])
+ 
+
+  #Seleccionamos la tabla 4, correspondiente al equipo visitante
+  second_table <- tables[4]
+  #Cargamos la tabla en el datafram df2
+  df2 <- data.frame(matrix(unlist(second_table), ncol = max(lengths(second_table)), byrow = FALSE))
+  names(df2) <- names(first_table[[which(lengths(second_table)>0)[1]]])
+
+  #Concatenamos boxscore local y visitante en df
+  df <- rbind(df1, df2)
+  df$season='2019'
+  df$game=GAME
+  #Unimos el boxscore del partido al dataframe BoxScores2019, donde almacenamos todos los partidos
+  BoxScores2019 <- rbind(BoxScores2019, df)
+}
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+#Mostramos el resultado final de los datos extraídos para toda la temporada 2019
+print(BoxScores2019)
+#Exportamos el dataset en formato csv
+write.csv2(BoxScores2019,"C:\\Users\\alvarezo\\Desktop\\BoxScores2019.csv", row.names = FALSE)
+```
