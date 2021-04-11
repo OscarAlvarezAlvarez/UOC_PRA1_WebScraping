@@ -43,7 +43,7 @@ teams_table_index <- 1
 local_table_index <- 3
 visiting_table_index <- 4
 Season <- '2019'
-crawl_delay <- 0
+crawl_delay <- 15
 tables <- NULL
 ```
 
@@ -123,7 +123,7 @@ getGameData <- function(game, season, table_index) {
   
   #Añadimos la información del partido
   
-  df$season='2019'
+  df$season=Season
   df$gameid=game
   df$game=paste(c(local, visiting), collapse="-")
   return(df)
@@ -147,7 +147,7 @@ BoxScores2019 <- NULL
 for (game in 1:252){
   #crawl-delay
   Sys.sleep(crawl_delay)
-  SeasonCode='2019'
+  SeasonCode=Season
   gameData <- getGameData(game, SeasonCode)
   BoxScores2019 <- rbind(BoxScores2019, gameData)
 }
