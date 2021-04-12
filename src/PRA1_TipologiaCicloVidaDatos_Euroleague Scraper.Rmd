@@ -1,0 +1,119 @@
+---
+title: "Práctica 1: "
+subtitle: "Scraper Euroleague BoxScores Season 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+#Cargamos librería rvest
+library("rvest")
+```
+
+Declaramos variables globales
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+baseurl <- as.character('https://www.euroleague.net/main/results/showgame?gamecode=')
+teams_table_index <- 1
+local_table_index <- 3
+visiting_table_index <- 4
+Season <- '2019'
+crawl_delay <- 15
+tables <- NULL
+```
+
+Metodo para obtener el nombre del equipo local
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+getLocalFromTable <- function(table) {
+  df <- data.frame(matrix(unlist(table), ncol = max(lengths(table)), byrow = FALSE))
+  return(df[1,1])
+}
+```
+
+Metodo para obtener el nombre del equipo visitante
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+getVisitingFromTable <- function(table) {
+  df <- data.frame(matrix(unlist(table), ncol = max(lengths(table)), byrow = FALSE))
+  return(df[2,1])
+}
+```
+
+Metodo para obtener las estadisticas de un partido
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+getStatsFromTable <- function(tables, table_index) {
+  table <- tables[table_index]
+  df <- data.frame(matrix(unlist(table), ncol = max(lengths(table)), byrow = FALSE))
+  names(df) <-  as.character(unlist(df[1,]))
+  
+  #Borramos la primera linea con información irrelevante
+  df <- df[-1,]
+  
+  #borramos las 3 últimas lineas con información irrelevante
+  n<-dim(df)[1]
+  df<-df[1:(n-3),]
+
+  df$season=Season
+  df$game=1
+  return(df)
+}
+```
+
+Metodo para obtener los datos de un partido
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+getGameData <- function(game, season, table_index) {
+  GameCode <- as.character(game)
+  SeasonCode <- as.character(season)
+  url <- paste(baseurl, GameCode, as.character('&seasoncode=E'), SeasonCode, sep="")
+  
+  BoxScore <- read_html(url)
+  
+  tables <- BoxScore %>% html_table(fill = TRUE)
+
+  local_df <- getStatsFromTable(tables, local_table_index)
+  visiting_df <- getStatsFromTable(tables, visiting_table_index)
+
+  local <- getLocalFromTable(tables[teams_table_index])
+  visiting <- getVisitingFromTable(tables[teams_table_index])
+  
+  local_df$team=local
+  visiting_df$team=visiting
+  
+  df <- rbind(local_df, visiting_df)
+  
+  df$season=Season
+  df$gameid=game
+  df$game=paste(c(local, visiting), collapse="-")
+  return(df)
+}
+```
+
+Probamos el metodo getGameData con el partido 1 de la temporada 2019
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+getGameData(1, Season)
+```
+
+Obtenemos los datos de todos los partidos de la temporada 2019 respetando el crawl-delay indicado en el robots.txt
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+BoxScores2019 <- NULL
+for (game in 1:252){
+  Sys.sleep(crawl_delay)
+  gameData <- getGameData(game, Season)
+  BoxScores2019 <- rbind(BoxScores2019, gameData)
+}
+```
+
+Mostramos los datos y obtenemos el excel
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+print(BoxScores2019)
+write.csv2(BoxScores2019,"./BoxScores2019.csv", row.names = FALSE)
+```
