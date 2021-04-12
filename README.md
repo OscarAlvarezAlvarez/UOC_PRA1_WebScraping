@@ -14,7 +14,8 @@ La actividad ha sido realizada por
 ## Ficheros del código fuente
 
 * **src/PRA1_TipologiaCicloVidaDatos_Euroleague Scraper.RMD**: código de la práctica realizada en R.
-* **BoxScores2019**: csv generado por el codigo en R. Contiene el dataset con toda la información de los partidos.
+* **BoxScores2019.csv**: csv generado por el codigo en R. Contiene el dataset con toda la información de los partidos.
+* **preguntas.pdf**: archivo con las preguntas y respuestas de la PRA1.
 
 ## DOI del dataset generado
 
